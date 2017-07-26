@@ -1,4 +1,4 @@
-Fission/frames
-Fission/output
-Generation/frames
-Generation/output
+frames/
+output/
+build/
+dist/
