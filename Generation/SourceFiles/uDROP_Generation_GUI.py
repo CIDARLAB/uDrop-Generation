@@ -158,8 +158,7 @@ class SetupGUI:
 
 		self.root.destroy()
 
-		subprocess.call("python3 uDROP_Generation_Standalone.py " + " ".join([str(fps),str(conversion_factor),str(start_x),str(start_y),str(width),str(height)]),shell=True)
-		#os.system("python3 generator_mine.py " + " ".join([str(fps),str(conversion_factor),str(start_x),str(start_y),str(width),str(height)]))
+		analysis = Analysis(fps,conversion_factor,start_x,start_y,width,height,self.buf)	
 
 	def drawGUI(self):
 		self.canvas.create_image(0,0, anchor="nw", image=self.img)
@@ -218,7 +217,6 @@ class SetupGUI:
 		self.drawGUI()
 
 
-SetupGUI("")
 
 
 
@@ -230,6 +228,92 @@ SetupGUI("")
 
  
 
+class Analysis:	
+
+	def __init__(self,fps,conversion_factor,start_x,start_y,width,height,buf):
+		self.fps = fps
+		self.conversion_factor = conversion_factor
+		self.start_x = start_x
+		self.start_y = start_y
+		self.width = width
+		self.height = height
+		self.raw_frames = [ b[start_y:start_y+height, start_x:start_x+width] for b in buf]
+		self.runAnalysis()
+
+	def runAnalysis(self):
+		self.resetOutputDir()
+		self.readParams()
+		self.createWave()
+		self.smoothWave()
+		self.getDropRate()
+		self.getAllAreas()
+		self.writeOutputs()
+
+	def resetOutputDir(self):
+		#Reset the output directory
+		if(os.path.exists("output/")):
+			shutil.rmtree('output/')
+		os.mkdir('output/')
+		os.mkdir('output/cleaned/')
+		os.mkdir('output/raw/')
+
+
+	def readParams(self):
+		self.canny_weights = [100,40] #Default tolerances for edge detection
+		self.wave_weights = [0.5,0.25,0.1] #Wave smoothing default weights
+
+		#Read user parameters if they choose to change them
+		if(os.path.exists("params.cfg")):
+			with open("params.cfg","r") as f:
+				lines = f.readlines()
+				self.canny_weights = [float(x.replace("\n","")) for x in lines[0].split(",")]
+				self.wave_weights = [float(x.replace("\n","")) for x in lines[1].split(",")]
+
+
+	#Apply blurs and edge detection to frame
+	def cleanFrame(self,focus_frame):
+		return cv2.Canny(cv2.blur(focus_frame,(4,4)),self.canny_weights[0],self.canny_weights[1])
+
+	def createWave(self):
+		self.avg_pixel_vals = []
+		self.edge_detected_frames = []
+		#Find the average pixel value of a band of pixels at the nozzle exit
+		#This band should get higher as a drop passes through it
+		#We build a wave of values from this that should look like a sin wave if everything went well
+		count = 0
+		for b in self.raw_frames:
+
+			#Canny's edge detection on each frame
+			arr = self.cleanFrame(b)
+			self.edge_detected_frames.append(arr)
+
+			this_avg = numpy.mean(arr);
+			self.avg_pixel_vals.append(this_avg)
+			
+			with open("output/sin.csv","a") as fout:
+				fout.write(str(count)+","+str(this_avg)+"\n")
+			count+=1
+
+
+
+
+	def smoothWave(self):
+		newdatlist = []
+
+		#Basically, we assign every point a new value that is equal to the weighted average of its neighbors
+		for i in range(0,len(self.avg_pixel_vals)):
+			if i>=len(self.wave_weights) and i<=len(self.avg_pixel_vals)-1-len(self.wave_weights):
+				val = self.avg_pixel_vals[i]
+				for j in range(1,len(self.wave_weights)+1):
+					val+=self.avg_pixel_vals[i+j]*self.wave_weights[j-1]
+					val+=self.avg_pixel_vals[i-j]*self.wave_weights[j-1]
+				val /= (float)(sum(self.wave_weights)*2 + 1)
+				newdatlist.append(val)
+			else:
+				newdatlist.append(self.avg_pixel_vals[i])	
+			with open("output/sin_smooth.csv","a") as fout:
+				fout.write(str(i)+","+str(newdatlist[i])+"\n")
+		self.avg_pixel_vals = newdatlist
 
 
 
@@ -238,15 +322,101 @@ SetupGUI("")
 
 
 
+	#Function for calculating areas of droplets
+	def getArea(self,arr):
+		#Find contours
+		im2, contours, hierarchy = cv2.findContours(arr, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+		#Concatenate all their verticies (useful for multiple islands)
+		outer_contour = numpy.concatenate(numpy.asarray(contours))
+
+		#Find the convex hull of the verticies
+		hull = cv2.convexHull(outer_contour)
+
+		#Find the area of our droplet
+		area = cv2.contourArea(hull)
+
+
+		filled_img = numpy.zeros((arr.shape[0],arr.shape[1],3),dtype='uint8')
+		cv2.drawContours(filled_img,[hull],0,(255,255,255),cv2.FILLED)
+
+		return area,filled_img
+
+
+
+
+	#Drop rate calculations (Basically calculating the period of the wave)
+	def getDropRate(self):
+
+		#We track the start valley and end valley so that we don't cut off calculations in the middle of a wave
+		#This shouldn't matter if we have sufficiently large data, but let's keep it in the spirit of accuracy
+		start_valley = 0
+		end_valley = 0
+
+		last_max = 0
+
+		#indexes of all maxes in the data set
+		self.max_list = []
+
+
+
+		#Loop through our wave data and get the maxes
+		maxes_count = 0
+		for i in range(1,len(self.avg_pixel_vals)-1):
+			if self.avg_pixel_vals[i] > self.avg_pixel_vals[i-1] and self.avg_pixel_vals[i] > self.avg_pixel_vals[i+1] and start_valley != 0: #Local max inside our range
+				maxes_count += 1
+				last_max = i
+				self.max_list.append(i)
+			elif self.avg_pixel_vals[i] <= self.avg_pixel_vals[i-1] and self.avg_pixel_vals[i] <= self.avg_pixel_vals[i+1]: #Local min
+				if(start_valley == 0):
+					start_valley = i
+				else:
+					end_valley = i
+
+
+		if(last_max > end_valley):
+			maxes_count -= 1 #We don't want to count maxes outside of the range of the data we are looking at
+
+
+
+		self.drops_per_second = (maxes_count / (float)(end_valley - start_valley)) * self.fps #Peaks per frames * frames per second = Peaks/seconds
+	
+	def getAllAreas(self):
+		self.drop_areas = []
+		self.filled_frames = []
+		for i in self.max_list:
+			area,img = self.getArea(self.edge_detected_frames[i])	
+			self.drop_areas.append(area)
+			self.filled_frames.append(img)
+	
+
+	def writeOutputs(self):
+		#stdout outputs
+		drop_areas_np = numpy.asarray(self.drop_areas)
+		print("Drops per Second: " + str(self.drops_per_second))
+		print("Average Drop Area (pixels): " + str(drop_areas_np.mean()))
+		print("Average Drop Area (micrometers): " + str(drop_areas_np.mean()*(self.conversion_factor**2)))
+		print("Drop Area Standard Deviation (pixels): " + str(drop_areas_np.std()))
+		print("Drop Area Standard Deviation (micrometers): " + str(drop_areas_np.std()*(self.conversion_factor**2)))
+
+		for i,f in enumerate(self.raw_frames):
+			Image.fromarray(f).save("output/raw/"+str(i)+"regular"+".png")
+
+		for i,f in enumerate(self.filled_frames):
+			Image.fromarray(f).save("output/cleaned/"+str(i)+"cleaned"+".png")
+
+
+		#disk outputs
+		with open("output/drop_data.csv","w") as f:
+			f.write(str(drop_areas_np.mean())+"," + str(drop_areas_np.mean()*self.conversion_factor**2) + "," + str(drop_areas_np.std()) + "," + str(drop_areas_np.std()*self.conversion_factor**2) + "," + str(self.drops_per_second) + "\n")
+
+
+		with open("output/drop_data_raw.csv","w") as f:
+			f.write(",".join([str(x) for x in drop_areas_np]) + "\n")
 
 
 
 
 
-
-
-
-
-
-
-
+#Commands to run when script is called
+SetupGUI("")
