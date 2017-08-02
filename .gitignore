@@ -1,3 +1,7 @@
+*.mov
+*.avi
+*.mp4
+*.swp
 frames/
 output/
 build/
