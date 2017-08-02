@@ -434,7 +434,7 @@ class AnalysisGUI:
 	def __init__(self,analysis_obj):
 
 		#Arbitrary. Just for visualization. Keeps the graph reasonably small
-		self.frame_limit = 25
+		self.frame_limit = 50
 		self.begin_frame = 0 #End frame is frame_limit away from this variable	
 
 		self.ao = analysis_obj
@@ -446,7 +446,7 @@ class AnalysisGUI:
 
 		maxes_frame = tkinter.Frame(self.root)
 		maxes_frame.pack(side="top")
-		maxes_label = tkinter.Label(maxes_frame,width=30,height=1)
+		maxes_label = tkinter.Label(maxes_frame)
 		maxes_label.pack(side="left")
 		maxes_label["text"]="List of Local Maxes: "
 		self.maxes_entry = tkinter.Entry(maxes_frame)
@@ -459,7 +459,7 @@ class AnalysisGUI:
 
 		valley_frame = tkinter.Frame(self.root)
 		valley_frame.pack(side="top")
-		valley_label = tkinter.Label(valley_frame,width=30,height=1)
+		valley_label = tkinter.Label(valley_frame)
 		valley_label.pack(side="left")
 		valley_label["text"]="Start and end valleys: "
 		self.valley_entry = tkinter.Entry(valley_frame)
@@ -472,15 +472,9 @@ class AnalysisGUI:
 
 		rate_frame = tkinter.Frame(self.root)
 		rate_frame.pack(side="top")
-		self.rate_label = tkinter.Label(rate_frame,width=30,height=1)
-		self.rate_label.pack(side="left")
-		self.rate_label["text"]="Drops per second: "+str(round(self.ao.drops_per_second,4))
 
 		area_frame = tkinter.Frame(self.root)
 		area_frame.pack(side="top")
-		area_label = tkinter.Label(area_frame,width=30,height=1)
-		area_label.pack(side="left")
-		area_label["text"]="Droplet areas (px): "
 		self.area_entry = tkinter.Entry(area_frame)
 		self.area_entry.pack(side="left")
 		self.area_entry.insert("end",",".join([str(x) for x in self.ao.drop_areas]))
@@ -489,15 +483,9 @@ class AnalysisGUI:
 		area_recalculate_button = ttk.Button(area_frame, text='Recalculate',command = self.recalculateAreas)
 		area_recalculate_button.pack(side="left")
 
-		areamean_frame = tkinter.Frame(self.root)
-		areamean_frame.pack(side="top")
-		self.areamean_label = tkinter.Label(areamean_frame,width=30,height=1)
-		self.areamean_label.pack(side="left")
-		self.areamean_label["text"]="Mean area: "+ str(numpy.asarray(self.ao.drop_areas).mean())
-
 		waveweight_frame = tkinter.Frame(self.root)
 		waveweight_frame.pack(side="top")
-		waveweight_label = tkinter.Label(waveweight_frame,width=30,height=1)
+		waveweight_label = tkinter.Label(waveweight_frame)
 		waveweight_label.pack(side="left")
 		waveweight_label["text"]="Wave smoothing weights: "
 		self.waveweight_entry = tkinter.Entry(waveweight_frame)
@@ -508,7 +496,7 @@ class AnalysisGUI:
 
 		canny_frame = tkinter.Frame(self.root)
 		canny_frame.pack(side="top")
-		canny_label = tkinter.Label(canny_frame,width=30,height=1)
+		canny_label = tkinter.Label(canny_frame)
 		canny_label.pack(side="left")
 		canny_label["text"]="Edge detection thresholds: "
 		self.canny_entry = tkinter.Entry(canny_frame)
@@ -561,6 +549,18 @@ class AnalysisGUI:
 		self.figure_canvas.show()
 		self.figure_canvas.get_tk_widget().pack(side="left")
 		
+		answers_frame = tkinter.Frame(self.root)
+		answers_frame.pack(side="top")
+		self.rate_label = tkinter.Label(answers_frame)
+		self.rate_label.pack(side="top")
+		self.areapx_label = tkinter.Label(answers_frame)
+		self.areapx_label.pack(side="top")
+		self.areamm_label = tkinter.Label(answers_frame)
+		self.areamm_label.pack(side="top")
+		self.stddevpx_label = tkinter.Label(answers_frame)
+		self.stddevpx_label.pack(side="top")
+		self.stddevmm_label = tkinter.Label(answers_frame)
+		self.stddevmm_label.pack(side="top")
 		                
 		self.redrawCanvases()
 		self.root.mainloop()
@@ -656,7 +656,6 @@ class AnalysisGUI:
 		self.ao.max_list = old_max_list[:]
 
 		self.ao.getDropRate()
-		self.rate_label["text"]="Drops per second: "+str(round(self.ao.drops_per_second,4))
 
 		self.maxes_entry.delete(0,"end")
 		self.maxes_entry.insert("end",",".join([str(x) for x in self.ao.max_list]))
@@ -665,13 +664,11 @@ class AnalysisGUI:
 	def updateAreas(self):
 		self.ao.drop_areas = [float(x) for x in self.area_entry.get().split(",")]
 		self.redrawCanvases()
-		self.areamean_label["text"]="Mean area: "+ str(numpy.asarray(self.ao.drop_areas).mean())
 	
 	def recalculateAreas(self):
 		self.ao.getAllAreas()
 		self.area_entry.delete(0,"end")
 		self.area_entry.insert("end",",".join([str(x) for x in self.ao.drop_areas]))
-		self.areamean_label["text"]="Mean area: "+ str(numpy.asarray(self.ao.drop_areas).mean())
 		self.redrawCanvases()
 
 	def resetWaveWeights(self):
@@ -741,6 +738,14 @@ class AnalysisGUI:
 			self.fnav_label.configure(foreground="red")
 		else:
 			self.fnav_label.configure(foreground="black")
+
+
+		self.rate_label["text"] = "Drops per second: "+str(round(self.ao.drops_per_second,4))
+		drop_areas_np = numpy.asarray(self.ao.drop_areas)
+		self.areapx_label["text"] = "Average Drop Area (pixels): " + str(drop_areas_np.mean())
+		self.areamm_label["text"] = "Average Drop Area (micrometers): " + str(drop_areas_np.mean()*(self.ao.conversion_factor**2))
+		self.stddevpx_label["text"] = "Drop Area Standard Deviation (pixels): " + str(drop_areas_np.std())
+		self.stddevmm_label["text"] = "Drop Area Standard Deviation (micrometers): " + str(drop_areas_np.std()*(self.ao.conversion_factor**2))
 
 
 
