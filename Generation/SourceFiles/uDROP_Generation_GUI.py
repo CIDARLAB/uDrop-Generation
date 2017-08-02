@@ -538,26 +538,29 @@ class AnalysisGUI:
 
 
 
-		figure = Figure(figsize=(5,2), dpi=100)
-		self.wave_plot = figure.add_subplot(111)
-		self.figure_canvas = FigureCanvasTkAgg(figure, self.root)
-		self.figure_canvas.show()
-		self.figure_canvas.get_tk_widget().pack(side="bottom", fill="both", expand=True)
 
 		self.image_frame = tkinter.Frame(self.root)
-		self.image_frame.pack(side="bottom")
-
-
+		self.image_frame.pack(side="top")
 		self.raw_canvas = tkinter.Canvas(self.image_frame,width = 50,height=50)
 		self.raw_canvas.pack(side="left")
-
 		self.edge_canvas = tkinter.Canvas(self.image_frame,width=50,height=50)
 		self.edge_canvas.pack(side="left")
-
 		self.filled_canvas = tkinter.Canvas(self.image_frame,width=50,height=50)
 		self.filled_canvas.pack(side="left")
 
 
+		figure_frame = tkinter.Frame(self.root)
+		figure_frame.pack(side="top")
+		figure = Figure(figsize=(5,2), dpi=100)
+		self.wave_plot = figure.add_subplot(111)
+		scroll_left = ttk.Button(figure_frame, text='<',command = self.scrollPlotLeft)
+		scroll_left.pack(side="left")
+		scroll_right = ttk.Button(figure_frame, text='>',command = self.scrollPlotRight)
+		scroll_right.pack(side="right")
+		self.figure_canvas = FigureCanvasTkAgg(figure, figure_frame)
+		self.figure_canvas.show()
+		self.figure_canvas.get_tk_widget().pack(side="left")
+		
 		                
 		self.redrawCanvases()
 		self.root.mainloop()
@@ -591,8 +594,22 @@ class AnalysisGUI:
 			self.frame_index = len(self.ao.avg_pixel_vals) - 1
 		self.redrawCanvases()
 
+	
+	def scrollPlotLeft(self):
+		mod_amt = int(self.frame_limit/3)
+		if(self.begin_frame - mod_amt < 0):
+			self.begin_frame = 0
+		else:
+			self.begin_frame -= mod_amt
+		self.redrawCanvases()
 
-
+	def scrollPlotRight(self):
+		mod_amt = int(self.frame_limit/3)
+		if(self.begin_frame + self.frame_limit + mod_amt >= len(self.ao.avg_pixel_vals)):
+			self.begin_frame = len(self.ao.avg_pixel_vals) - self.frame_limit
+		else:
+			self.begin_frame += mod_amt
+		self.redrawCanvases()
 
 
 	def updateMaxes(self):
@@ -675,7 +692,7 @@ class AnalysisGUI:
 
 		#Don't reset the wave weights when we want to reset the canny weights
 		self.ao.wave_weights = old_wave_weights[:]
-
+ 
 		self.canny_entry.delete(0,"end")
 		self.canny_entry.insert("end",",".join([str(x) for x in self.ao.wave_weights]))
 
@@ -690,9 +707,19 @@ class AnalysisGUI:
 		self.wave_plot.clear()
 
 
-		self.wave_plot.plot([x for x in range(len(self.ao.avg_pixel_vals))],self.ao.avg_pixel_vals)
-		self.wave_plot.plot(self.ao.max_list,[self.ao.avg_pixel_vals[x] for x in self.ao.max_list],"ro")
-		self.wave_plot.plot([self.ao.start_valley,self.ao.end_valley],[self.ao.avg_pixel_vals[x] for x in [self.ao.start_valley,self.ao.end_valley]],"go")
+		self.wave_plot.plot([x for x in range(self.begin_frame,self.begin_frame + self.frame_limit)],
+				[self.ao.avg_pixel_vals[x] for x in range(self.begin_frame,self.begin_frame + self.frame_limit)])
+
+		self.wave_plot.plot([x for x in self.ao.max_list if x > self.begin_frame and x < self.begin_frame+self.frame_limit],
+				[self.ao.avg_pixel_vals[x] for x in self.ao.max_list if x > self.begin_frame and x < self.begin_frame+self.frame_limit],"ro")
+
+		if(self.ao.start_valley > self.begin_frame and self.ao.start_valley < self.begin_frame + self.frame_limit):
+			self.wave_plot.plot([self.ao.start_valley],[self.ao.avg_pixel_vals[self.ao.start_valley]],"go")
+
+		if(self.ao.end_valley > self.begin_frame and self.ao.end_valley < self.begin_frame + self.frame_limit):
+			self.wave_plot.plot([self.ao.end_valley],[self.ao.avg_pixel_vals[self.ao.end_valley]],"go")
+
+		self.wave_plot.set_ylim([min(self.ao.avg_pixel_vals)-1,max(self.ao.avg_pixel_vals)+1])
 		self.figure_canvas.draw()
 
 
