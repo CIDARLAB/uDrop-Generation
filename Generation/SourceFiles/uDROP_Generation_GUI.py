@@ -66,19 +66,17 @@ class SetupGUI:
 
 		fps_frame = tkinter.Frame(self.root)
 		fps_frame.pack(side="top")
-		fps_label = tkinter.Text(fps_frame,width=30,height=1)
+		fps_label = tkinter.Label(fps_frame,width=30,height=1)
 		fps_label.pack(side="left")
-		fps_label.insert("end","Frames per Second:")
-		fps_label.configure(state="disabled")
+		fps_label["text"]="Frames per Second:"
 		self.fps_entry = tkinter.Entry(fps_frame)
 		self.fps_entry.pack(side="left")
 
 		channel_frame = tkinter.Frame(self.root)
 		channel_frame.pack(side="top")
-		channel_label = tkinter.Text(channel_frame,width=30,height=1)
+		channel_label = tkinter.Label(channel_frame,width=30,height=1)
 		channel_label.pack(side="left")
-		channel_label.insert("end","Channel Width in micrometers:")
-		channel_label.configure(state="disabled")
+		channel_label["text"]="Channel Width in micrometers:"
 		self.channel_entry = tkinter.Entry(channel_frame)
 		self.channel_entry.pack(side="left")
 
