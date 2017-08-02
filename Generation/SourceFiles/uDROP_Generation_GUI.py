@@ -509,6 +509,8 @@ class AnalysisGUI:
 		rerun_frame.pack(side="top")
 		rerun_button = ttk.Button(rerun_frame, text='Rerun with new params', command = self.rerunAnalysis)
 		rerun_button.pack(side="left")
+		save_button = ttk.Button(rerun_frame, text='Save modified outputs', command = self.saveAnalysis)
+		save_button.pack(side="left")
 
 		fnav_frame = tkinter.Frame(self.root)
 		fnav_frame.pack(side="top")
@@ -698,6 +700,9 @@ class AnalysisGUI:
 		self.ao.wave_weights = [float(x) for x in self.waveweight_entry.get().split(",")]
 		self.ao.runAnalysis()
 		self.redrawCanvases()
+
+	def saveAnalysis(self):
+		self.ao.writeOutputs()
 
 
 	def redrawCanvases(self):
