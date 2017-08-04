@@ -33,7 +33,7 @@ class SetupGUI:
 
 		self.bound_top_left = [-1,-1]
 		self.bound_bottom_right = [-1,-1]
-		self.channel_selections = [[0,0],[0,0]]
+		self.channel_selections = [[0,0],[0,0],[0,0]]
 		self.select_index = 0
 
 		self.root = tkinter.Tk()
@@ -76,7 +76,7 @@ class SetupGUI:
 		channel_frame.pack(side="top")
 		channel_label = tkinter.Label(channel_frame,width=30,height=1)
 		channel_label.pack(side="left")
-		channel_label["text"]="Channel Width in micrometers:"
+		channel_label["text"]="Blue line distance in micrometers: "
 		self.channel_entry = tkinter.Entry(channel_frame)
 		self.channel_entry.pack(side="left")
 
@@ -125,39 +125,63 @@ class SetupGUI:
 
 
 	def click(self,event):
-		modx = event.x * self.resize_ratio
-		mody = event.y * self.resize_ratio
 		if self.select_index == 0:
-			self.bound_top_left = [modx,mody]
+			self.bound_top_left = [event.x,event.y]
 			self.select_index += 1
 		elif self.select_index == 1:
-			self.bound_bottom_right = [modx,mody]
+			self.bound_bottom_right = [event.x,event.y]
 			self.drawGUI()
 			self.select_index += 1
 		elif self.select_index == 2:
-			self.channel_selections[0][0] = modx
-			self.channel_selections[0][1] = mody
+			self.channel_selections[0][0] = event.x
+			self.channel_selections[0][1] = event.y
 			self.select_index += 1
 		elif self.select_index == 3:
-			self.channel_selections[1][0] = modx
-			self.channel_selections[1][1] = mody
+			self.channel_selections[1][0] = event.x
+			self.channel_selections[1][1] = event.y
+			self.select_index += 1
+		elif self.select_index == 4:
+			self.channel_selections[2][0] = event.x
+			self.channel_selections[2][1] = event.y
+			self.getIntersectPoint()
 			self.select_index += 1
 		self.drawGUI()
+
+	def getIntersectPoint(self):
+		if self.channel_selections[0][0] == self.channel_selections[1][0]:
+			self.intersect_point = [self.channel_selections[0][0],self.channel_selections[2][1]]
+
+		elif self.channel_selections[0][1] == self.channel_selections[1][1]:
+			self.intersect_point = [self.channel_selections[2][0],self.channel_selections[0][1]]
+
+		else:
+			slope1 = (self.channel_selections[0][1] - self.channel_selections[1][1]) / (self.channel_selections[0][0] - self.channel_selections[1][0])
+			coeff1 = slope1
+			b1 = (slope1 * -self.channel_selections[0][0]) + self.channel_selections[0][1]
+
+			slope2 = -1/slope1
+			coeff2 = slope2
+			b2 = (slope2 * -self.channel_selections[2][0]) + self.channel_selections[2][1]
+
+			intersectionX = (b1-b2)/(coeff2-coeff1)
+			intersectionY = coeff1*intersectionX + b1
+
+			self.intersect_point = [intersectionX,intersectionY]
 
 
 		
 
 	def confirm(self):
-		if(self.select_index != 4):
+		if(self.select_index != 5):
 			return
 
-		start_x = round(self.bound_top_left[0])
-		start_y = round(self.bound_top_left[1])
-		width = round(abs(self.bound_bottom_right[0] - self.bound_top_left[0]))
-		height = round(abs(self.bound_bottom_right[1] - self.bound_top_left[1]))
+		start_x = round(self.bound_top_left[0]*self.resize_ratio)
+		start_y = round(self.bound_top_left[1]*self.resize_ratio)
+		width = round(abs(self.bound_bottom_right[0] - self.bound_top_left[0])*self.resize_ratio)
+		height = round(abs(self.bound_bottom_right[1] - self.bound_top_left[1])*self.resize_ratio)
 		fps = float(self.fps_entry.get())
 		channel_size_mm = float(self.channel_entry.get())
-		channel_size_px = float(abs(self.channel_selections[1][1] - self.channel_selections[0][1]))
+		channel_size_px = (((self.intersect_point[0]-self.channel_selections[2][0])**2 + (self.intersect_point[1]-self.channel_selections[2][1])**2)**0.5)*self.resize_ratio
 		conversion_factor = channel_size_mm/channel_size_px
 
 		self.root.destroy()
@@ -173,9 +197,11 @@ class SetupGUI:
 		if self.select_index < 2:
 			mtext = "Draw bounding box"
 		elif self.select_index < 3:
-			mtext = "Draw channel top boundary"
+			mtext = "Draw start of line segment"
 		elif self.select_index < 4:
-			mtext = "Draw channel bottom boundary"
+			mtext = "Draw end of line segment"
+		elif self.select_index < 5:
+			mtext = "Draw point off of segment"
 
 		
 		
@@ -185,14 +211,22 @@ class SetupGUI:
 
 
 		if(self.select_index>1):
-			self.canvas.create_line(self.bound_top_left[0] / self.resize_ratio, self.bound_top_left[1] / self.resize_ratio, self.bound_top_left[0] / self.resize_ratio, self.bound_bottom_right[1] / self.resize_ratio, fill="green")
-			self.canvas.create_line(self.bound_top_left[0] / self.resize_ratio, self.bound_top_left[1] / self.resize_ratio, self.bound_bottom_right[0] / self.resize_ratio, self.bound_top_left[1] / self.resize_ratio, fill="green")
-			self.canvas.create_line(self.bound_top_left[0] / self.resize_ratio, self.bound_bottom_right[1] / self.resize_ratio, self.bound_bottom_right[0] / self.resize_ratio, self.bound_bottom_right[1] / self.resize_ratio, fill="green")
-			self.canvas.create_line(self.bound_bottom_right[0] / self.resize_ratio, self.bound_top_left[1] / self.resize_ratio, self.bound_bottom_right[0] / self.resize_ratio, self.bound_bottom_right[1] / self.resize_ratio, fill="green")
+			self.canvas.create_line(self.bound_top_left[0], self.bound_top_left[1], self.bound_top_left[0], self.bound_bottom_right[1], fill="green")
+			self.canvas.create_line(self.bound_top_left[0], self.bound_top_left[1], self.bound_bottom_right[0], self.bound_top_left[1], fill="green")
+			self.canvas.create_line(self.bound_top_left[0], self.bound_bottom_right[1], self.bound_bottom_right[0], self.bound_bottom_right[1], fill="green")
+			self.canvas.create_line(self.bound_bottom_right[0], self.bound_top_left[1], self.bound_bottom_right[0], self.bound_bottom_right[1], fill="green")
 		if(self.select_index>2):
 			for i in range(0,self.select_index-2):
-				self.canvas.create_line((self.channel_selections[i][0]/self.resize_ratio)-10, (self.channel_selections[i][1]/self.resize_ratio), (self.channel_selections[i][0]/self.resize_ratio)+10, (self.channel_selections[i][1]/self.resize_ratio), fill="red")
+				self.canvas.create_line((self.channel_selections[i][0])-3, (self.channel_selections[i][1])-3, (self.channel_selections[i][0])+3, (self.channel_selections[i][1])+3, fill="red")
+				self.canvas.create_line((self.channel_selections[i][0])-3, (self.channel_selections[i][1])+3, (self.channel_selections[i][0])+3, (self.channel_selections[i][1])-3, fill="red")
 
+		if(self.select_index>3):
+			self.canvas.create_line(self.channel_selections[0][0],self.channel_selections[0][1],self.channel_selections[1][0],self.channel_selections[1][1],fill="red")
+		if(self.select_index>4):
+			self.canvas.create_line((self.intersect_point[0])-3, (self.intersect_point[1])+3, (self.intersect_point[0])+3, (self.intersect_point[1])-3, fill="blue")
+			self.canvas.create_line((self.intersect_point[0])-3, (self.intersect_point[1])-3, (self.intersect_point[0])+3, (self.intersect_point[1])+3, fill="blue")
+
+			self.canvas.create_line(self.intersect_point[0], self.intersect_point[1], self.channel_selections[2][0], self.channel_selections[2][1], fill="blue",dash=(3,2))
 
 	def cancel(self):
 		self.select_index = 0
@@ -756,4 +790,4 @@ class AnalysisGUI:
 
 
 #Commands to run when script is called
-SetupGUI("")
+SetupGUI(sys.argv[1] if len(sys.argv)>1 else "")
