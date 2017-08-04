@@ -521,6 +521,9 @@ class AnalysisGUI:
 
 		diameter_frame = tkinter.Frame(self.root)
 		diameter_frame.pack(side="top")
+		diameter_label = tkinter.Label(diameter_frame)
+		diameter_label.pack(side="left")
+		diameter_label["text"]="Droplet diameters: "
 		self.diameter_entry = tkinter.Entry(diameter_frame)
 		self.diameter_entry.pack(side="left")
 		self.diameter_entry.insert("end",",".join([str(x) for x in self.ao.drop_diameters]))
