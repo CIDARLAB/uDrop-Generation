@@ -37,6 +37,7 @@ class SetupGUI:
 		self.select_index = 0
 
 		self.root = tkinter.Tk()
+		self.root.title("µ-DROP Setup")
 
 
 		self.pic_index = 0
@@ -76,7 +77,7 @@ class SetupGUI:
 		channel_frame.pack(side="top")
 		channel_label = tkinter.Label(channel_frame,width=30,height=1)
 		channel_label.pack(side="left")
-		channel_label["text"]="Blue line distance in micrometers: "
+		channel_label["text"]="Blue line distance in µm: "
 		self.channel_entry = tkinter.Entry(channel_frame)
 		self.channel_entry.pack(side="left")
 
@@ -297,7 +298,7 @@ class Analysis:
 		self.smoothWave()
 		self.getWaveMaxes()
 		self.getDropRate()
-		self.getAllAreas()
+		self.getAllDiameters()
 		self.writeOutputs()
 
 	def resetOutputDir(self):
@@ -307,6 +308,7 @@ class Analysis:
 		os.mkdir('output/')
 		os.mkdir('output/cleaned/')
 		os.mkdir('output/raw/')
+		os.mkdir('output/edge/')
 
 
 
@@ -362,15 +364,15 @@ class Analysis:
 
 
 
-	#Function for calculating areas of droplets
-	def getArea(self,arr):
+	#Function for calculating diameters of droplets
+	def getDiameter(self,arr):
 		#Find contours
 		im2, contours, hierarchy = cv2.findContours(arr, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
 		if(len(contours) == 0):
 			filled_img = numpy.zeros((arr.shape[0],arr.shape[1],3),dtype='uint8')
-			area = 0
-			return area,filled_img
+			diameter = 0
+			return diameter,filled_img
 		                
 
 		#Concatenate all their verticies (useful for multiple islands)
@@ -379,14 +381,20 @@ class Analysis:
 		#Find the convex hull of the verticies
 		hull = cv2.convexHull(outer_contour)
 
-		#Find the area of our droplet
-		area = cv2.contourArea(hull)
+		#Fit a rectangle to the hull
+		rect = cv2.minAreaRect(hull)
+
+		#Get major axis of diameter
+		diameter = max(rect[1])
 
 
+		box = cv2.boxPoints(rect)
+		box = numpy.int0(box)
 		filled_img = numpy.zeros((arr.shape[0],arr.shape[1],3),dtype='uint8')
 		cv2.drawContours(filled_img,[hull],0,(255,255,255),cv2.FILLED)
+		cv2.drawContours(filled_img,[box],0,(0,0,255),2)
 
-		return area,filled_img
+		return diameter,filled_img
 
 
 
@@ -429,26 +437,29 @@ class Analysis:
 	
 
 	
-	def getAllAreas(self):
-		self.drop_areas = []
+	def getAllDiameters(self):
+		self.drop_diameters = []
 		self.filled_frames = []
 		for i in self.max_list:
-			area,img = self.getArea(self.edge_detected_frames[i])	
-			self.drop_areas.append(area)
+			diameter,img = self.getDiameter(self.edge_detected_frames[i])	
+			self.drop_diameters.append(diameter)
 			self.filled_frames.append(img)
 	
 
 	def writeOutputs(self):
 		#stdout outputs
-		drop_areas_np = numpy.asarray(self.drop_areas)
+		drop_diameters_np = numpy.asarray(self.drop_diameters)
 		print("Drops per Second: " + str(self.drops_per_second))
-		print("Average Drop Area (pixels): " + str(drop_areas_np.mean()))
-		print("Average Drop Area (micrometers): " + str(drop_areas_np.mean()*(self.conversion_factor**2)))
-		print("Drop Area Standard Deviation (pixels): " + str(drop_areas_np.std()))
-		print("Drop Area Standard Deviation (micrometers): " + str(drop_areas_np.std()*(self.conversion_factor**2)))
+		print("Average Drop Diameter (pixels): " + str(drop_diameters_np.mean()))
+		print("Average Drop Diameter (µm): " + str(drop_diameters_np.mean()*(self.conversion_factor**2)))
+		print("Drop Diameter Standard Deviation (pixels): " + str(drop_diameters_np.std()))
+		print("Drop Diameter Standard Deviation (µm): " + str(drop_diameters_np.std()*(self.conversion_factor**2)))
 
 		for i,f in enumerate(self.raw_frames):
 			Image.fromarray(f).save("output/raw/"+str(i)+"regular"+".png")
+
+		for i,f in enumerate(self.edge_detected_frames):
+			Image.fromarray(f).save("output/edge/"+str(i)+"edge"+".png")
 
 		for i,f in enumerate(self.filled_frames):
 			Image.fromarray(f).save("output/cleaned/"+str(i)+"cleaned"+".png")
@@ -456,11 +467,11 @@ class Analysis:
 
 		#disk outputs
 		with open("output/drop_data.csv","w") as f:
-			f.write(str(drop_areas_np.mean())+"," + str(drop_areas_np.mean()*self.conversion_factor**2) + "," + str(drop_areas_np.std()) + "," + str(drop_areas_np.std()*self.conversion_factor**2) + "," + str(self.drops_per_second) + "\n")
+			f.write(str(drop_diameters_np.mean())+"," + str(drop_diameters_np.mean()*self.conversion_factor**2) + "," + str(drop_diameters_np.std()) + "," + str(drop_diameters_np.std()*self.conversion_factor**2) + "," + str(self.drops_per_second) + "\n")
 
 
 		with open("output/drop_data_raw.csv","w") as f:
-			f.write(",".join([str(x) for x in drop_areas_np]) + "\n")
+			f.write(",".join([str(x) for x in drop_diameters_np]) + "\n")
 
 
 
@@ -474,6 +485,7 @@ class AnalysisGUI:
 		self.ao = analysis_obj
 
 		self.root = tkinter.Tk()
+		self.root.title("µ-DROP Analysis")
 
 		self.frame_index = 0;
 
@@ -507,15 +519,15 @@ class AnalysisGUI:
 		rate_frame = tkinter.Frame(self.root)
 		rate_frame.pack(side="top")
 
-		area_frame = tkinter.Frame(self.root)
-		area_frame.pack(side="top")
-		self.area_entry = tkinter.Entry(area_frame)
-		self.area_entry.pack(side="left")
-		self.area_entry.insert("end",",".join([str(x) for x in self.ao.drop_areas]))
-		area_apply_button = ttk.Button(area_frame, text='Apply',command = self.updateAreas)
-		area_apply_button.pack(side="left")
-		area_recalculate_button = ttk.Button(area_frame, text='Recalculate',command = self.recalculateAreas)
-		area_recalculate_button.pack(side="left")
+		diameter_frame = tkinter.Frame(self.root)
+		diameter_frame.pack(side="top")
+		self.diameter_entry = tkinter.Entry(diameter_frame)
+		self.diameter_entry.pack(side="left")
+		self.diameter_entry.insert("end",",".join([str(x) for x in self.ao.drop_diameters]))
+		diameter_apply_button = ttk.Button(diameter_frame, text='Apply',command = self.updateDiameters)
+		diameter_apply_button.pack(side="left")
+		diameter_recalculate_button = ttk.Button(diameter_frame, text='Recalculate',command = self.recalculateDiameters)
+		diameter_recalculate_button.pack(side="left")
 
 		waveweight_frame = tkinter.Frame(self.root)
 		waveweight_frame.pack(side="top")
@@ -589,10 +601,10 @@ class AnalysisGUI:
 		answers_frame.pack(side="top")
 		self.rate_label = tkinter.Label(answers_frame)
 		self.rate_label.pack(side="top")
-		self.areapx_label = tkinter.Label(answers_frame)
-		self.areapx_label.pack(side="top")
-		self.areamm_label = tkinter.Label(answers_frame)
-		self.areamm_label.pack(side="top")
+		self.diameterpx_label = tkinter.Label(answers_frame)
+		self.diameterpx_label.pack(side="top")
+		self.diametermm_label = tkinter.Label(answers_frame)
+		self.diametermm_label.pack(side="top")
 		self.stddevpx_label = tkinter.Label(answers_frame)
 		self.stddevpx_label.pack(side="top")
 		self.stddevmm_label = tkinter.Label(answers_frame)
@@ -697,14 +709,14 @@ class AnalysisGUI:
 		self.maxes_entry.insert("end",",".join([str(x) for x in self.ao.max_list]))
 		self.redrawCanvases()
 
-	def updateAreas(self):
-		self.ao.drop_areas = [float(x) for x in self.area_entry.get().split(",")]
+	def updateDiameters(self):
+		self.ao.drop_diameters = [float(x) for x in self.diameter_entry.get().split(",")]
 		self.redrawCanvases()
 	
-	def recalculateAreas(self):
-		self.ao.getAllAreas()
-		self.area_entry.delete(0,"end")
-		self.area_entry.insert("end",",".join([str(x) for x in self.ao.drop_areas]))
+	def recalculateDiameters(self):
+		self.ao.getAllDiameters()
+		self.diameter_entry.delete(0,"end")
+		self.diameter_entry.insert("end",",".join([str(x) for x in self.ao.drop_diameters]))
 		self.redrawCanvases()
 
 	def resetWaveWeights(self):
@@ -767,7 +779,7 @@ class AnalysisGUI:
 		self.edge_img = ImageTk.PhotoImage(Image.fromarray(edge_arr))
 		self.edge_canvas.create_image(0,0, anchor="nw", image=self.edge_img)
 
-		filled_arr = self.ao.getArea(edge_arr)[1]
+		filled_arr = self.ao.getDiameter(edge_arr)[1]
 		self.filled_img = ImageTk.PhotoImage(Image.fromarray(filled_arr))
 		self.filled_canvas.create_image(0,0, anchor="nw", image=self.filled_img)
 
@@ -780,11 +792,11 @@ class AnalysisGUI:
 
 
 		self.rate_label["text"] = "Drops per second: "+str(round(self.ao.drops_per_second,4))
-		drop_areas_np = numpy.asarray(self.ao.drop_areas)
-		self.areapx_label["text"] = "Average Drop Area (pixels): " + str(drop_areas_np.mean())
-		self.areamm_label["text"] = "Average Drop Area (micrometers): " + str(drop_areas_np.mean()*(self.ao.conversion_factor**2))
-		self.stddevpx_label["text"] = "Drop Area Standard Deviation (pixels): " + str(drop_areas_np.std())
-		self.stddevmm_label["text"] = "Drop Area Standard Deviation (micrometers): " + str(drop_areas_np.std()*(self.ao.conversion_factor**2))
+		drop_diameters_np = numpy.asarray(self.ao.drop_diameters)
+		self.diameterpx_label["text"] = "Average Drop Diameter (pixels): " + str(drop_diameters_np.mean())
+		self.diametermm_label["text"] = "Average Drop Diameter (µm): " + str(drop_diameters_np.mean()*(self.ao.conversion_factor**2))
+		self.stddevpx_label["text"] = "Drop Diameter Standard Deviation (pixels): " + str(drop_diameters_np.std())
+		self.stddevmm_label["text"] = "Drop Diameter Standard Deviation (µm): " + str(drop_diameters_np.std()*(self.ao.conversion_factor**2))
 
 
 
