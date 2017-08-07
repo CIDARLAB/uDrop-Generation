@@ -1,5 +1,5 @@
 """GUI display for uDROP setup
-Usage: python3 uDROP.py name_of_video.mp4
+Usage: python3 uDROP_Generation.py name_of_video.mp4
 Note that you can omit the video path if you already have something in your frames folder that you'd like to evaluate.
 """
 
