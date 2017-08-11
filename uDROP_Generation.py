@@ -749,6 +749,8 @@ class AnalysisGUI:
 		"""Redraw our local maxes to the user specified locations"""
 		self.ao.max_list = [int(x) for x in self.maxes_entry.get().split(",")]
 
+		self.ao.max_list = [x for x in self.ao.max_list if x > self.ao.start_valley and x < self.ao.end_valley]
+
 		self.ao.getDropRate()
 		self.rate_label["text"]="Drops per second: "+str(round(self.ao.drops_per_second,4))
 
@@ -765,6 +767,8 @@ class AnalysisGUI:
 		self.ao.start_valley = old_start_val
 		self.ao.end_valley = old_end_val
 
+		self.ao.max_list = [x for x in self.ao.max_list if x > self.ao.start_valley and x < self.ao.end_valley]
+
 		self.ao.getDropRate()
 		self.rate_label["text"]="Drops per second: "+str(round(self.ao.drops_per_second,4))
 
@@ -777,6 +781,8 @@ class AnalysisGUI:
 		valleys = [int(x) for x in self.valley_entry.get().split(",")]
 		self.ao.start_valley = valleys[0] 
 		self.ao.end_valley = valleys[1] 
+
+		self.ao.max_list = [x for x in self.ao.max_list if x > self.ao.start_valley and x < self.ao.end_valley]
 
 		self.ao.getDropRate()
 		self.rate_label["text"]="Drops per second: "+str(round(self.ao.drops_per_second,4))
@@ -791,6 +797,8 @@ class AnalysisGUI:
 	
 		#Don't reset the maxes when we just want to calculate valleys
 		self.ao.max_list = old_max_list[:]
+
+		self.ao.max_list = [x for x in self.ao.max_list if x > self.ao.start_valley and x < self.ao.end_valley]
 
 		self.ao.getDropRate()
 
@@ -832,7 +840,7 @@ class AnalysisGUI:
 		self.ao.wave_weights = old_wave_weights[:]
  
 		self.canny_entry.delete(0,"end")
-		self.canny_entry.insert("end",",".join([str(x) for x in self.ao.wave_weights]))
+		self.canny_entry.insert("end",",".join([str(x) for x in self.ao.canny_weights]))
 
 	def rerunAnalysis(self):
 		"""Rerun the entire analysis with updated values"""
