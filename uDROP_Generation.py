@@ -473,18 +473,27 @@ class Analysis:
 		#indexes of all maxes in the data set
 		self.max_list = []
 
-
-
+		self.meanVal = sum(self.avg_pixel_vals)/len(self.avg_pixel_vals)
+		tempValList = []
 		#Loop through our wave data and get the maxes
-		maxes_count = 0
 		for i in range(1,len(self.avg_pixel_vals)-1):
-			if self.avg_pixel_vals[i] > self.avg_pixel_vals[i-1] and self.avg_pixel_vals[i] > self.avg_pixel_vals[i+1] and self.start_valley != 0: #Local max inside our range
-				self.max_list.append(i)
-			elif self.avg_pixel_vals[i] <= self.avg_pixel_vals[i-1] and self.avg_pixel_vals[i] <= self.avg_pixel_vals[i+1]: #Local min
-				if(self.start_valley == 0):
-					self.start_valley = i
-				else:
-					self.end_valley = i
+			if self.avg_pixel_vals[i] < self.meanVal :
+
+				#Log the one true max that occured above the mean
+				if len(tempValList) > 0:
+					self.max_list.append(max(tempValList)[1])
+					tempValList = []
+
+				#Find if the below average points are a minimum
+				if self.avg_pixel_vals[i] <= self.avg_pixel_vals[i-1] and self.avg_pixel_vals[i] <= self.avg_pixel_vals[i+1]: #Local min
+					if self.start_valley == 0:
+						self.start_valley = i
+					else:
+						self.end_valley = i
+			#Find if the above average points are a maximum
+			elif self.avg_pixel_vals[i] >= self.avg_pixel_vals[i-1] and self.avg_pixel_vals[i] >= self.avg_pixel_vals[i+1] and self.start_valley != 0: #Local max inside our range
+				#Log all local maxes between when the wave goes above the mean and when it dips below
+				tempValList.append((self.avg_pixel_vals[i],i))
 
 
 		if(self.max_list[-1] > self.end_valley):
@@ -858,6 +867,10 @@ class AnalysisGUI:
 		"""Draw our wave plots, frame displays, and outputs"""
 		self.wave_plot.clear()
 
+
+		#Draw the mean values
+		self.wave_plot.plot([self.begin_frame, self.begin_frame+self.frame_limit],
+				[self.ao.meanVal,self.ao.meanVal],"r--")
 
 		#Draw the average pixel values
 		self.wave_plot.plot([x for x in range(self.begin_frame,self.begin_frame + self.frame_limit)],
