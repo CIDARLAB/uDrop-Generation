@@ -33,6 +33,7 @@ class SetupGUI:
 	def __init__(self,vid_path):
 		"""Set up the GUI"""
 
+		self.vid_path = vid_path
 		#Run the ffmpeg command in console
 		self.makeFrames(vid_path)
 
@@ -224,7 +225,7 @@ class SetupGUI:
 		self.root.destroy()
 
 		#Run the analysis
-		analysis = Analysis(fps,conversion_factor,start_x,start_y,width,height,self.buf)	
+		analysis = Analysis(fps,conversion_factor,start_x,start_y,width,height,self.buf,self.vid_path)	
 
 		#Display the analysis GUI
 		analysis_gui = AnalysisGUI(analysis)
@@ -319,7 +320,7 @@ class SetupGUI:
 
 class Analysis:	
 	"""Backend class for all our video processing"""
-	def __init__(self,fps,conversion_factor,start_x,start_y,width,height,buf):
+	def __init__(self,fps,conversion_factor,start_x,start_y,width,height,buf,vid_name):
 		"""Initialize the analysis with the user inputted data"""		
 		self.fps = fps
 		self.conversion_factor = conversion_factor
@@ -328,6 +329,7 @@ class Analysis:
 		self.width = width
 		self.height = height
 		self.raw_frames = [ b[start_y:start_y+height, start_x:start_x+width] for b in buf]
+		self.vid_name = vid_name
 		self.defaultParams()
 		self.runAnalysis()
 
@@ -528,6 +530,8 @@ class Analysis:
 		print("Average Drop Diameter (µm): " + str(drop_diameters_np.mean()*(self.conversion_factor**2)))
 		print("Drop Diameter Standard Deviation (pixels): " + str(drop_diameters_np.std()))
 		print("Drop Diameter Standard Deviation (µm): " + str(drop_diameters_np.std()*(self.conversion_factor**2)))
+		print("Conversion Factor: " + str(self.conversion_factor))
+		print(self.vid_name + "," + str(self.drops_per_second)+","+str(drop_diameters_np.mean()*(self.conversion_factor)) + "," + str(drop_diameters_np.std()*(self.conversion_factor)) + "," + str(drop_diameters_np.size))
 
 		for i,f in enumerate(self.raw_frames):
 			Image.fromarray(f).save("output/raw/"+str(i)+"regular"+".png")
@@ -546,6 +550,9 @@ class Analysis:
 
 		with open("output/drop_data_raw.csv","w") as f:
 			f.write(",".join([str(x) for x in drop_diameters_np]) + "\n")
+
+		with open("./drop_data.csv","a") as f:
+			f.write(self.vid_name + "," + str(self.drops_per_second)+","+str(drop_diameters_np.mean()*(self.conversion_factor)) + "," + str(drop_diameters_np.std()*(self.conversion_factor)) + "," + str(drop_diameters_np.size)+"\n")
 
 
 
