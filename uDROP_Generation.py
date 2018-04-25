@@ -527,9 +527,9 @@ class Analysis:
 		drop_diameters_np = numpy.asarray(self.drop_diameters)
 		print("Drops per Second: " + str(self.drops_per_second))
 		print("Average Drop Diameter (pixels): " + str(drop_diameters_np.mean()))
-		print("Average Drop Diameter (µm): " + str(drop_diameters_np.mean()*(self.conversion_factor**2)))
+		print("Average Drop Diameter (µm): " + str(drop_diameters_np.mean()*(self.conversion_factor)))
 		print("Drop Diameter Standard Deviation (pixels): " + str(drop_diameters_np.std()))
-		print("Drop Diameter Standard Deviation (µm): " + str(drop_diameters_np.std()*(self.conversion_factor**2)))
+		print("Drop Diameter Standard Deviation (µm): " + str(drop_diameters_np.std()*(self.conversion_factor)))
 		print("Conversion Factor: " + str(self.conversion_factor))
 		print(self.vid_name + "," + str(self.drops_per_second)+","+str(drop_diameters_np.mean()*(self.conversion_factor)) + "," + str(drop_diameters_np.std()*(self.conversion_factor)) + "," + str(drop_diameters_np.size))
 
@@ -545,7 +545,7 @@ class Analysis:
 
 		#disk outputs
 		with open("output/drop_data.csv","w") as f:
-			f.write(str(drop_diameters_np.mean())+"," + str(drop_diameters_np.mean()*self.conversion_factor**2) + "," + str(drop_diameters_np.std()) + "," + str(drop_diameters_np.std()*self.conversion_factor**2) + "," + str(self.drops_per_second) + "\n")
+			f.write(str(drop_diameters_np.mean())+"," + str(drop_diameters_np.mean()*self.conversion_factor) + "," + str(drop_diameters_np.std()) + "," + str(drop_diameters_np.std()*self.conversion_factor) + "," + str(self.drops_per_second) + "\n")
 
 
 		with open("output/drop_data_raw.csv","w") as f:
