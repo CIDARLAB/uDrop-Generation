@@ -129,7 +129,7 @@ class SetupGUI:
 			if(os.path.exists("frames/")):
 				shutil.rmtree('frames/')
 			os.mkdir('frames/')
-			os.system("ffmpeg -i " + vid_path + " -vf mpdecimate,setpts=N/FRAME_RATE/TB frames/%03d.png")
+			os.system("ffmpeg -i " + vid_path + " -vf mpdecimate,setpts=N/FRAME_RATE/TB frames/%05d.png")
 
 		#Save all frames to buf in order
 		frame_list = sorted(os.listdir("frames"))
