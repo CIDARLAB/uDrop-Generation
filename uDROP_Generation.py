@@ -136,7 +136,7 @@ class SetupGUI:
 		self.buf = numpy.empty((len(frame_list),),dtype = numpy.object_)
 		self.buf.fill([])
 		for i in tqdm(range(len(frame_list))):
-			self.buf[i] = cv2.imread("frames/"+frame_list[i])
+			self.buf[i] = cv2.cvtColor(cv2.imread("frames/"+frame_list[i]), cv2.COLOR_BGR2RGB)
 
 
 
