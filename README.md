@@ -27,6 +27,9 @@ This program analyzes the rate and sizes of droplets produced from a microfluidi
   * Your results should be in files in the folder in addition to appearing on the command line and on the GUI
   * Read the wiki for more information on these outputs.
 
+## Dependencies
+Make sure you have ffmpeg installed on your command line! You will also need OpenCV for python.
+
 ## Wiki
 * [Inputs/Usage](https://github.com/CIDARLAB/droplet-image-processing/wiki/Generation-Inputs-and-Usage)
 * [Outputs](https://github.com/CIDARLAB/droplet-image-processing/wiki/Generation-Outputs)
