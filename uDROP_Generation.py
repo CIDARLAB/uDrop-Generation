@@ -554,6 +554,12 @@ class Analysis:
 		with open("./drop_data.csv","a") as f:
 			f.write(self.vid_name + "," + str(self.drops_per_second)+","+str(drop_diameters_np.mean()*(self.conversion_factor)) + "," + str(drop_diameters_np.std()*(self.conversion_factor)) + "," + str(drop_diameters_np.size)+"\n")
 
+		with open("./drop_diams_pixels.csv","a") as f:
+			f.write(self.vid_name + "," + ",".join([str(x) for x in drop_diameters_np]) + "\n")
+
+		with open("./drop_diams_um.csv","a") as f:
+			f.write(self.vid_name + "," + ",".join([str(x) for x in drop_diameters_np*self.conversion_factor]) + "\n")
+
 
 
 class AnalysisGUI:
