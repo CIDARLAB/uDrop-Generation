@@ -124,19 +124,21 @@ class SetupGUI:
 	def makeFrames(self,vid_path):
 		"""Save frames to buf and write them to disk if applicable"""
 
-		#If there is a video path, rewrite the frames directory
+		# If there is a video path, rewrite the frames directory
 		if(vid_path!=""):
 			if(os.path.exists("frames/")):
 				shutil.rmtree('frames/')
 			os.mkdir('frames/')
 			os.system("ffmpeg -i " + vid_path + " -vf mpdecimate,setpts=N/FRAME_RATE/TB frames/%05d.png")
 
-		#Save all frames to buf in order
-		frame_list = sorted(os.listdir("frames"))
-		self.buf = numpy.empty((len(frame_list),),dtype = numpy.object_)
+		self.frame_list = sorted(os.listdir("frames"))
+
+		# Save some frames to buf
+		buf_length = min(len(self.frame_list),100)
+		self.buf = numpy.empty((buf_length,),dtype = numpy.object_)
 		self.buf.fill([])
-		for i in tqdm(range(len(frame_list))):
-			self.buf[i] = cv2.cvtColor(cv2.imread("frames/"+frame_list[i]), cv2.COLOR_BGR2RGB)
+		for i in tqdm(range(buf_length)):
+			self.buf[i] = cv2.cvtColor(cv2.imread("frames/"+self.frame_list[i]), cv2.COLOR_BGR2RGB)
 
 
 
@@ -225,7 +227,7 @@ class SetupGUI:
 		self.root.destroy()
 
 		#Run the analysis
-		analysis = Analysis(fps,conversion_factor,start_x,start_y,width,height,self.buf,self.vid_path)	
+		analysis = Analysis(fps, conversion_factor, start_x, start_y, width,height, self.frame_list, self.vid_path)
 
 		#Display the analysis GUI
 		analysis_gui = AnalysisGUI(analysis)
@@ -320,7 +322,7 @@ class SetupGUI:
 
 class Analysis:	
 	"""Backend class for all our video processing"""
-	def __init__(self,fps,conversion_factor,start_x,start_y,width,height,buf,vid_name):
+	def __init__(self,fps,conversion_factor,start_x,start_y,width,height,frame_list,vid_name):
 		"""Initialize the analysis with the user inputted data"""		
 		self.fps = fps
 		self.conversion_factor = conversion_factor
@@ -328,7 +330,7 @@ class Analysis:
 		self.start_y = start_y
 		self.width = width
 		self.height = height
-		self.raw_frames = [ b[start_y:start_y+height, start_x:start_x+width] for b in buf]
+		self.frame_list = frame_list
 		self.vid_name = vid_name
 		self.defaultParams()
 		self.runAnalysis()
@@ -369,6 +371,13 @@ class Analysis:
 		os.mkdir('output/raw/')
 		os.mkdir('output/edge/')
 
+	def getRawFrame(self,count):
+		"""Load raw frame from disk"""
+		return numpy.asarray(Image.open("output/raw/"+str(count)+"regular"+".png"))
+
+	def getEdgeFrame(self,count):
+		"""Load edge detected frame from disk"""
+		return numpy.asarray(Image.open("output/edge/"+str(count)+"edge"+".png"))
 
 
 	def cleanFrame(self,focus_frame):
@@ -379,16 +388,18 @@ class Analysis:
 		"""Create a wave of data from the average pixel values of each edge detected frame"""
 
 		self.avg_pixel_vals = []
-		self.edge_detected_frames = []
 		#Find the average pixel value of a band of pixels at the nozzle exit
 		#This band should get higher as a drop passes through it
 		#We build a wave of values from this that should look like a sin wave if everything went well
 		count = 0
-		for b in self.raw_frames:
+		for i in tqdm(range(len(self.frame_list))):
+			im_name = self.frame_list[i]
+			b = cv2.cvtColor(cv2.imread("frames/"+im_name), cv2.COLOR_BGR2RGB)[self.start_y:self.start_y+self.height, self.start_x:self.start_x+self.width]
+			Image.fromarray(b).save("output/raw/"+str(i)+"regular"+".png")
 
 			#Canny's edge detection on each frame
 			arr = self.cleanFrame(b)
-			self.edge_detected_frames.append(arr)
+			Image.fromarray(arr).save("output/edge/"+str(i)+"edge"+".png")
 
 			this_avg = numpy.mean(arr);
 			self.avg_pixel_vals.append(this_avg)
@@ -494,7 +505,7 @@ class Analysis:
 						self.end_valley = i
 			#Find if the above average points are a maximum
 			elif self.avg_pixel_vals[i] >= self.avg_pixel_vals[i-1] and self.avg_pixel_vals[i] >= self.avg_pixel_vals[i+1] and self.start_valley != 0: #Local max inside our range
-				#Log all local maxes between when the wave goes above the mean and when it dips below
+				#Log all local maxes between when tedge goes above the mean and when it dips below
 				tempValList.append((self.avg_pixel_vals[i],i))
 
 
@@ -514,11 +525,10 @@ class Analysis:
 	def getAllDiameters(self):
 		"""Calculate the diameters at each local max"""
 		self.drop_diameters = []
-		self.filled_frames = []
 		for i in self.max_list:
-			diameter,img = self.getDiameter(self.edge_detected_frames[i])	
+			diameter,img = self.getDiameter(self.getEdgeFrame(i))	
 			self.drop_diameters.append(diameter)
-			self.filled_frames.append(img) #We save the filled frames as a side effect to getting the droplet diameters
+			Image.fromarray(img).save("output/cleaned/"+str(i)+"cleaned"+".png")
 	
 
 	def writeOutputs(self):
@@ -532,15 +542,6 @@ class Analysis:
 		print("Drop Diameter Standard Deviation (µm): " + str(drop_diameters_np.std()*(self.conversion_factor)))
 		print("Conversion Factor: " + str(self.conversion_factor))
 		print(self.vid_name + "," + str(self.drops_per_second)+","+str(drop_diameters_np.mean()*(self.conversion_factor)) + "," + str(drop_diameters_np.std()*(self.conversion_factor)) + "," + str(drop_diameters_np.size))
-
-		for i,f in enumerate(self.raw_frames):
-			Image.fromarray(f).save("output/raw/"+str(i)+"regular"+".png")
-
-		for i,f in enumerate(self.edge_detected_frames):
-			Image.fromarray(f).save("output/edge/"+str(i)+"edge"+".png")
-
-		for i,f in enumerate(self.filled_frames):
-			Image.fromarray(f).save("output/cleaned/"+str(i)+"cleaned"+".png")
 
 
 		#disk outputs
@@ -907,7 +908,7 @@ class AnalysisGUI:
 
 
 		#Draw the frame displays
-		raw_arr = self.ao.raw_frames[self.frame_index]
+		raw_arr = self.ao.getRawFrame(self.frame_index)
 		self.raw_img = ImageTk.PhotoImage(Image.fromarray(raw_arr))
 		self.raw_canvas.create_image(0,0, anchor="nw", image=self.raw_img)
 
