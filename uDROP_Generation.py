@@ -20,7 +20,7 @@ import numpy
 from tqdm import tqdm
 import matplotlib
 matplotlib.use("TkAgg")
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 import math
 
@@ -694,7 +694,7 @@ class AnalysisGUI:
 		scroll_right = ttk.Button(figure_frame, text='>',command = self.scrollPlotRight)
 		scroll_right.pack(side="right")
 		self.figure_canvas = FigureCanvasTkAgg(figure, figure_frame)
-		self.figure_canvas.show()
+		#self.figure_canvas.show()
 		self.figure_canvas.get_tk_widget().pack(side="left")
 		
 
