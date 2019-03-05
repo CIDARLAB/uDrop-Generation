@@ -933,9 +933,9 @@ class AnalysisGUI:
 		self.rate_label["text"] = "Drops per second: "+str(round(self.ao.drops_per_second,4))
 		drop_diameters_np = numpy.asarray(self.ao.drop_diameters)
 		self.diameterpx_label["text"] = "Average Drop Diameter (pixels): " + str(drop_diameters_np.mean())
-		self.diametermm_label["text"] = "Average Drop Diameter (µm): " + str(drop_diameters_np.mean()*(self.ao.conversion_factor**2))
+		self.diametermm_label["text"] = "Average Drop Diameter (µm): " + str(drop_diameters_np.mean()*(self.ao.conversion_factor))
 		self.stddevpx_label["text"] = "Drop Diameter Standard Deviation (pixels): " + str(drop_diameters_np.std())
-		self.stddevmm_label["text"] = "Drop Diameter Standard Deviation (µm): " + str(drop_diameters_np.std()*(self.ao.conversion_factor**2))
+		self.stddevmm_label["text"] = "Drop Diameter Standard Deviation (µm): " + str(drop_diameters_np.std()*(self.ao.conversion_factor))
 
 
 
