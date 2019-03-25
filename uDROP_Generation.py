@@ -441,7 +441,7 @@ class Analysis:
 		"""Calculate diameter of edge detected droplet"""
 		
 		#Find contours
-		im2, contours, hierarchy = cv2.findContours(arr, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+		contours, hierarchy = cv2.findContours(arr, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
 		if(len(contours) == 0):
 			filled_img = numpy.zeros((arr.shape[0],arr.shape[1],3),dtype='uint8')
