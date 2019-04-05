@@ -3,9 +3,37 @@
 # Overview
 This program analyzes the rate and sizes of droplets produced from a microfluidic droplet generator from a high-speed video. The user inputs the general regions of droplet activity in the video and then gets the drop generation rate and average size of each droplet for droplet generation videos.
 
+# Installation
+## Linux
+* Open up a terminal
+* Update your repositories with **sudo apt-get update**
+* Install the folowing dependencies:
+ * sudo apt-get install python3-pip
+ * sudo apt-get install python3-tk
+ * sudo apt-get install ffmpeg
+ * sudo apt-get install libsm6 libxext
+* Install pipenv with the following command:
+ * sudo python3 -m pip install pipenv
+* Clone this repo into your local files
+ *  git clone https://github.com/CIDARLAB/uDrop-Generation.git
+* Now, install the dependencies into the virtual environment:
+ * pipenv shell
+ * pipenv install
+ 
+## Mac
+* Open up a terminal
+* Install the following dependencies:
+ * sudo easy_install pip
+* Install pipenv with the following command:
+ * sudo python3 -m pip install pipenv 
+ * sudo brew install ffmpeg
+* Now, install the dependencies into the virtual environment:
+ * pipenv shell
+ * pipenv install
+ 
 # Quick-start
-* Clone the repo
 * cd to the locally cloned repository
+* Type in **pipenv shell** to activate your local virtual environment (if you are not already in a shell
 * Type in **python3 uDropGeneration.py /path/to/video.mpg**
 * The GUI will appear
 * Make a bounding box over one of the droplets
@@ -26,9 +54,6 @@ This program analyzes the rate and sizes of droplets produced from a microfluidi
 * Exit out of the program
   * Your results should be in files in the folder in addition to appearing on the command line and on the GUI
   * Read the wiki for more information on these outputs.
-
-## Dependencies
-Make sure you have ffmpeg installed on your command line! You will also need OpenCV for python.
 
 ## Wiki
 * [Inputs/Usage](https://github.com/CIDARLAB/droplet-image-processing/wiki/Generation-Inputs-and-Usage)
