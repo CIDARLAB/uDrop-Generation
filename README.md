@@ -16,6 +16,8 @@ This program analyzes the rate and sizes of droplets produced from a microfluidi
   * sudo python3 -m pip install pipenv
 * Clone this repo into your local files
   *  git clone https://github.com/CIDARLAB/uDrop-Generation.git
+* Navigate to the directory
+  * cd uDrop-Generation/
 * Now, install the dependencies into the virtual environment:
   * pipenv shell
   * pipenv install
@@ -23,10 +25,14 @@ This program analyzes the rate and sizes of droplets produced from a microfluidi
 ## Mac
 * Open up a terminal
 * Install the following dependencies:
-  * sudo easy_install pip
-* Install pipenv with the following command:
-  * sudo python3 -m pip install pipenv 
+  * sudo easy_install pip 
   * sudo brew install ffmpeg
+* Install pipenv with the following command:
+  * sudo python3 -m pip install pipenv
+* Clone this repo into your local files
+  *  git clone https://github.com/CIDARLAB/uDrop-Generation.git
+* Navigate to the directory
+  * cd uDrop-Generation/
 * Now, install the dependencies into the virtual environment:
   * pipenv shell
   * pipenv install
