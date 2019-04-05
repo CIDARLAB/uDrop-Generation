@@ -8,28 +8,28 @@ This program analyzes the rate and sizes of droplets produced from a microfluidi
 * Open up a terminal
 * Update your repositories with **sudo apt-get update**
 * Install the folowing dependencies:
- * sudo apt-get install python3-pip
- * sudo apt-get install python3-tk
- * sudo apt-get install ffmpeg
- * sudo apt-get install libsm6 libxext
+  * sudo apt-get install python3-pip
+  * sudo apt-get install python3-tk
+  * sudo apt-get install ffmpeg
+  * sudo apt-get install libsm6 libxext
 * Install pipenv with the following command:
- * sudo python3 -m pip install pipenv
+  * sudo python3 -m pip install pipenv
 * Clone this repo into your local files
- *  git clone https://github.com/CIDARLAB/uDrop-Generation.git
+  *  git clone https://github.com/CIDARLAB/uDrop-Generation.git
 * Now, install the dependencies into the virtual environment:
- * pipenv shell
- * pipenv install
+  * pipenv shell
+  * pipenv install
  
 ## Mac
 * Open up a terminal
 * Install the following dependencies:
- * sudo easy_install pip
+  * sudo easy_install pip
 * Install pipenv with the following command:
- * sudo python3 -m pip install pipenv 
- * sudo brew install ffmpeg
+  * sudo python3 -m pip install pipenv 
+  * sudo brew install ffmpeg
 * Now, install the dependencies into the virtual environment:
- * pipenv shell
- * pipenv install
+  * pipenv shell
+  * pipenv install
  
 # Quick-start
 * cd to the locally cloned repository
