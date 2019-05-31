@@ -3,6 +3,8 @@
 # Overview
 This program analyzes the rate and sizes of droplets produced from a microfluidic droplet generator from a high-speed video. The user inputs the general regions of droplet activity in the video and then gets the drop generation rate and average size of each droplet for droplet generation videos.
 
+A video tutorial explaining uDROP can be found at https://www.youtube.com/watch?v=sHpFGO3Jh3E&list=PLqdo5Two_cXhm-twPwbpeV4aCSFE85_in&index=2
+
 # Installation
 ## Linux
 * Open up a terminal
