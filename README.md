@@ -5,6 +5,19 @@ This program analyzes the rate and sizes of droplets produced from a microfluidi
 
 A video tutorial explaining uDROP can be found at https://www.youtube.com/watch?v=sHpFGO3Jh3E&list=PLqdo5Two_cXhm-twPwbpeV4aCSFE85_in&index=2
 
+If you use uDROP for your research, we would be thankful if you referred to it by citing the following publication: https://pubs.rsc.org/en/content/articlelanding/2019/lc/c8lc01253a/unauth#!divAbstract
+
+The BibTex is included here:
+```
+@article{lashkaripour2019performance,
+  title={Performance tuning of microfluidic flow-focusing droplet generators},
+  author={Lashkaripour, Ali and Rodriguez, Christopher and Ortiz, Luis and Densmore, Douglas},
+  journal={Lab on a Chip},
+  year={2019},
+  publisher={Royal Society of Chemistry}
+}
+```
+
 # Installation
 ## Linux
 * Open up a terminal
